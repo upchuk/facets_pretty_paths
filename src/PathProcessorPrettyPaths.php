@@ -8,14 +8,12 @@
 namespace Drupal\facets_pretty_paths;
 
 use Drupal\Core\PathProcessor\InboundPathProcessorInterface;
-use Drupal\Core\PathProcessor\OutboundPathProcessorInterface;
-use Drupal\Core\Render\BubbleableMetadata;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Path processor for url_alter_test.
  */
-class PathProcessorPrettyPaths implements InboundPathProcessorInterface, OutboundPathProcessorInterface {
+class PathProcessorPrettyPaths implements InboundPathProcessorInterface {
 
   /**
    * {@inheritdoc}
@@ -30,22 +28,4 @@ class PathProcessorPrettyPaths implements InboundPathProcessorInterface, Outboun
     }
     return $path;
   }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function processOutbound($path, &$options = array(), Request $request = NULL, BubbleableMetadata $bubbleable_metadata = NULL) {
-
-    // If path is a facet source, alter it to have subpaths for the given queries.
-    if($path == '/search/content'){
-      foreach($options['query']['f'] as $facetquery){
-        $parts = explode(':', $facetquery);
-        $key = $parts[0];
-        $value = $parts[1];
-        $path .= '/' . $key . '/' . $value;
-      }
-    }
-    return $path;
-  }
-
 }

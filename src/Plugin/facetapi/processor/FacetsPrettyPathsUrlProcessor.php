@@ -73,10 +73,8 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
         $filters_current_result .= '/' . $filter_key . '/' . $result->getRawValue();
       }
 
-//      if ($facet->getPath()) {
-//        $request = Request::create('/' . $facet->getPath());
-//      }
       $url = Url::fromUri('base:/search/content' . $filters_current_result);
+      $url->setOption('query', $this->request->query);
       $result->setUrl($url);
     }
 

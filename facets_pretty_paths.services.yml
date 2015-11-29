@@ -3,4 +3,3 @@ services:
     class: Drupal\facets_pretty_paths\PathProcessorPrettyPaths
     tags:
       - { name: path_processor_inbound, priority: 800 }
-      - { name: path_processor_outbound, priority: 100 }
