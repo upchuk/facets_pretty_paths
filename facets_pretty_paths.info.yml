@@ -1,0 +1,5 @@
+name: 'Facets Pretty Paths'
+type: module
+description: 'Pretty paths for Facets.'
+core: 8.x
+package: Search

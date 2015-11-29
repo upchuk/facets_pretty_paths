@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function facets_pretty_paths_install() {
+  module_set_weight('facets_pretty_paths', 2);
+}
