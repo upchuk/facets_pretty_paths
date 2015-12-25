@@ -55,7 +55,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
     /** @var \Drupal\facets\Result\ResultInterface $result */
     foreach ($results as &$result) {
       $filters_current_result = $filters;
-      $filter_key = $facet->getFieldAlias();
+      $filter_key = $facet->getUrlAlias();
       // If the value is active, remove the filter string from the parameters.
       if ($result->isActive()) {
         $filters_current_result = str_replace('/' . $filter_key . '/' . $result->getRawValue(), '', $filters_current_result);
@@ -78,8 +78,8 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
    */
   public function setActiveItems(FacetInterface $facet) {
     // Get the filter key of the facet.
-    if (isset($this->active_filters[$facet->getFieldAlias()])) {
-      foreach ($this->active_filters[$facet->getFieldAlias()] as $value) {
+    if (isset($this->active_filters[$facet->getUrlAlias()])) {
+      foreach ($this->active_filters[$facet->getUrlAlias()] as $value) {
         $facet->setActiveItem(trim($value, '"'));
       }
     }
