@@ -20,12 +20,19 @@ class PathProcessorPrettyPaths implements InboundPathProcessorInterface {
    */
   public function processInbound($path, Request $request) {
 
+    // TODO: check if we can do this faster, now every url requires a load of all facet sources once (its cached later though)
+    $facet_source_plugin_manager = \Drupal::service('plugin.manager.facets.facet_source');
+    $facet_sources = $facet_source_plugin_manager->getDefinitions();
+
     // If path starts with an url having a facet source, reroute all subpaths to
     // the facet source.
-    // Path example: /search/content/entity_node_field_tags_entity_name/swi
-    if(strpos($path, '/search/content', 0)=== 0){
-      $path = '/search/content';
+    foreach ($facet_sources as $facet_source) {
+      $facet_source_plugin = $facet_source_plugin_manager->createInstance($facet_source['id']);
+      if ($path && strpos($path, '/' . $facet_source_plugin->getPath(), 0) === 0) {
+        $path = '/' . $facet_source_plugin->getPath();
+      }
     }
+
     return $path;
   }
 }

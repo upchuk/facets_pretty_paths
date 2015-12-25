@@ -2,33 +2,26 @@
 
 /**
  * @file
- * Contains Drupal\facets_pretty_paths\Plugin\facetapi\url_processor\FacetsPrettyPathsUrlProcessor.
+ * Contains Drupal\facets_pretty_paths\Plugin\facets\url_processor\FacetsPrettyPathsUrlProcessor.
  */
 
-namespace Drupal\facets_pretty_paths\Plugin\facetapi\processor;
+namespace Drupal\facets_pretty_paths\Plugin\facets\url_processor;
 
 use Drupal\Core\Url;
-use Drupal\facetapi\FacetInterface;
-use Drupal\facetapi\Processor\UrlProcessorPluginBase;
+use Drupal\facets\FacetInterface;
+use Drupal\facets\UrlProcessor\UrlProcessorPluginBase;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * @FacetApiProcessor(
+ * Pretty paths URL processor.
+ *
+ * @FacetsUrlProcessor(
  *   id = "facets_pretty_paths",
- *   label = @Translation("Pretty paths url processor"),
- *   description = @Translation("Pretty paths url processor."),
- *   stages = {
- *     "pre_query" = 50,
- *     "build" = 15,
- *   },
+ *   label = @Translation("Pretty paths"),
+ *   description = @Translation("Pretty paths uses slashes as separator, e.g. /brand/drupal/color/blue"),
  * )
  */
 class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
-
-  /**
-   * A string that separates the filters in the query string.
-   */
-  const SEPARATOR = ':';
 
   /**
    * @var array
@@ -41,26 +34,25 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, Request $request) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $request);
-    $this->initializeActiveFilters();
+    $this->initializeActiveFilters($configuration);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function build(FacetInterface $facet, array $results) {
+  public function buildUrls(FacetInterface $facet, array $results) {
 
     // No results are found for this facet, so don't try to create urls.
     if (empty($results)) {
       return [];
     }
 
-    $facet_source_path = '/search/content';
 
     $path = $this->request->getPathInfo();
-    $filters = substr($path, (strlen($facet_source_path)));
+    $filters = substr($path, (strlen('/' . $facet->getFacetSource()->getPath())));
 
 
-    /** @var \Drupal\facetapi\Result\ResultInterface $result */
+    /** @var \Drupal\facets\Result\ResultInterface $result */
     foreach ($results as &$result) {
       $filters_current_result = $filters;
       $filter_key = $facet->getFieldAlias();
@@ -73,8 +65,8 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
         $filters_current_result .= '/' . $filter_key . '/' . $result->getRawValue();
       }
 
-      $url = Url::fromUri('base:/search/content' . $filters_current_result);
-      $url->setOption('query', $this->request->query);
+      $url = Url::fromUri('base:/' . $facet->getFacetSource()->getPath() . $filters_current_result);
+      $url->setOption('query', $this->request->query->all());
       $result->setUrl($url);
     }
 
@@ -84,7 +76,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
   /**
    * {@inheritdoc}
    */
-  public function preQuery(FacetInterface $facet) {
+  public function setActiveItems(FacetInterface $facet) {
     // Get the filter key of the facet.
     if (isset($this->active_filters[$facet->getFieldAlias()])) {
       foreach ($this->active_filters[$facet->getFieldAlias()] as $value) {
@@ -100,8 +92,10 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
    * filters but doesn't assign them to facets. In the processFacet method the
    * active values for a specific facet are added to the facet.
    */
-  protected function initializeActiveFilters() {
-    $facet_source_path = '/search/content';
+  protected function initializeActiveFilters($configuration) {
+    if($configuration['facet']){
+      $facet_source_path = base_path() . $configuration['facet']->getFacetSource()->getPath();
+    }
 
     $path = $this->request->getPathInfo();
     if(strpos($path, $facet_source_path, 0)=== 0){
