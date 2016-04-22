@@ -49,7 +49,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
 
 
     $path = $this->request->getPathInfo();
-    $filters = substr($path, (strlen('/' . $facet->getFacetSource()->getPath())));
+    $filters = substr($path, (strlen($facet->getFacetSource()->getPath())));
 
 
     /** @var \Drupal\facets\Result\ResultInterface $result */
@@ -65,7 +65,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
         $filters_current_result .= '/' . $filter_key . '/' . $result->getRawValue();
       }
 
-      $url = Url::fromUri('base:/' . $facet->getFacetSource()->getPath() . $filters_current_result);
+      $url = Url::fromUri('base:' . $facet->getFacetSource()->getPath() . $filters_current_result);
       $url->setOption('query', $this->request->query->all());
       $result->setUrl($url);
     }
@@ -94,7 +94,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
    */
   protected function initializeActiveFilters($configuration) {
     if($configuration['facet']){
-      $facet_source_path = base_path() . $configuration['facet']->getFacetSource()->getPath();
+      $facet_source_path = $configuration['facet']->getFacetSource()->getPath();
     }
 
     $path = $this->request->getPathInfo();

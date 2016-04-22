@@ -28,8 +28,9 @@ class PathProcessorPrettyPaths implements InboundPathProcessorInterface {
     // the facet source.
     foreach ($facet_sources as $facet_source) {
       $facet_source_plugin = $facet_source_plugin_manager->createInstance($facet_source['id']);
-      if ($path && strpos($path, '/' . $facet_source_plugin->getPath(), 0) === 0) {
-        $path = '/' . $facet_source_plugin->getPath();
+      $facet_source_path = $facet_source_plugin->getPath();
+      if ($path && strpos($path, $facet_source_path, 0) === 0) {
+        $path = $facet_source_path;
       }
     }
 
