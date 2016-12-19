@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains Drupal\facets_pretty_paths\Plugin\facets\url_processor\FacetsPrettyPathsUrlProcessor.
+ * Contains Drupal\facets_pretty_paths\Plugin\facets\url_processor\FacetsPrettyPathsTaxonomyUrlProcessor.
  */
 
 namespace Drupal\facets_pretty_paths\Plugin\facets\url_processor;
@@ -11,17 +11,19 @@ use Drupal\Core\Url;
 use Drupal\facets\FacetInterface;
 use Drupal\facets\UrlProcessor\UrlProcessorPluginBase;
 use Symfony\Component\HttpFoundation\Request;
+use Drupal\taxonomy\Entity\Term;
+use Drupal\facets_pretty_paths\Plugin\facets\url_processor\FacetsPrettyPathsUrlProcessor;
 
 /**
  * Pretty paths URL processor.
  *
  * @FacetsUrlProcessor(
- *   id = "facets_pretty_paths",
- *   label = @Translation("Pretty paths"),
- *   description = @Translation("Pretty paths uses slashes as separator, e.g. /brand/drupal/color/blue"),
+ *   id = "facets_pretty_paths_taxonomy",
+ *   label = @Translation("Pretty paths taxonomy"),
+ *   description = @Translation("Pretty paths that outputs the id, e.g. /alias/term_name-term_id"),
  * )
  */
-class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
+class FacetsPrettyPathsTaxonomyUrlProcessor extends UrlProcessorPluginBase {
 
   /**
    * @var array
@@ -47,39 +49,39 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
       return [];
     }
 
-
     $path = $this->request->getPathInfo();
     $filters = substr($path, (strlen($facet->getFacetSource()->getPath())));
-
 
     /** @var \Drupal\facets\Result\ResultInterface $result */
     foreach ($results as &$result) {
       $filters_current_result = $filters;
       $filter_key = $facet->getUrlAlias();
+      $tid = $result->getRawValue();
+
+      if ($term = Term::load($tid)) {
+        $term_name = $term->get('name')->value;
+        $term_name = \Drupal::service('pathauto.alias_cleaner')->cleanString($term_name);
+
+        $filter_value = '/' . $filter_key . '/' . $term_name . '-' . $tid;
+      }
+      else {
+        $filter_value = $result->getRawValue();
+      }
+
       // If the value is active, remove the filter string from the parameters.
       if ($result->isActive()) {
-        $filters_current_result = str_replace('/' . $filter_key . '/' . $result->getRawValue(), '', $filters_current_result);
-        if ($facet->getEnableParentWhenChildGetsDisabled() && $facet->getUseHierarchy()) {
-          // Enable parent id again if exists.
-          $parent_ids = $facet->getHierarchyInstance()->getParentIds($result->getRawValue());
-          if (isset($parent_ids[0]) && $parent_ids[0]) {
-            $filters_current_result .= '/' . $filter_key . '/' . $parent_ids[0];
-          }
-        }
+        $filters_current_result = str_replace($filter_value, '', $filters_current_result);
       }
       // If the value is not active, add the filter string.
       else {
-        $filters_current_result .= '/' . $filter_key . '/' . $result->getRawValue();
+        if ($term = Term::load($tid)) {
+          $term_name = $term->get('name')->value;
+          $term_name = \Drupal::service('pathauto.alias_cleaner')->cleanString($term_name);
 
-        if ($facet->getUseHierarchy()) {
-          // If hierarchy is active, unset parent trail and every child when
-          // building the enable-link to ensure those are not enabled anymore.
-          $parent_ids = $facet->getHierarchyInstance()->getParentIds($result->getRawValue());
-          $child_ids = $facet->getHierarchyInstance()->getNestedChildIds($result->getRawValue());
-          $parents_and_child_ids = array_merge($parent_ids, $child_ids);
-          foreach ($parents_and_child_ids as $id) {
-            $filters_current_result =  str_replace('/' . $filter_key . '/' . $id, '', $filters_current_result);
-          }
+          $filters_current_result .= $filter_value;
+        }
+        else {
+          $filters_current_result .= $filter_value;
         }
       }
 
@@ -111,29 +113,33 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
    * active values for a specific facet are added to the facet.
    */
   protected function initializeActiveFilters($configuration) {
-    if($configuration['facet']){
+    if ($configuration['facet']){
       $facet_source_path = $configuration['facet']->getFacetSource()->getPath();
     }
 
     $path = $this->request->getPathInfo();
-    if(strpos($path, $facet_source_path, 0)=== 0){
+    if (strpos($path, $facet_source_path, 0)=== 0) {
       $filters = substr($path, (strlen($facet_source_path) + 1));
       $parts = explode('/', $filters);
       $key = '';
-      foreach($parts as $index => $part){
-        if($index%2 == 0){
+
+      foreach ($parts as $index => $part) {
+        if ($index%2 == 0){
           $key = $part;
-        }else{
+        }
+        else {
+          // Taxonomy special case: /alias/term_name-term_id.
+          $exploded = explode('-', $part);
+          $tid = array_pop($exploded);
+
           if (!isset($this->active_filters[$key])) {
-            $this->active_filters[$key] = [$part];
+            $this->active_filters[$key] = [$tid];
           }
           else {
-            $this->active_filters[$key][] = $part;
+            $this->active_filters[$key][] = $tid;
           }
         }
-
       }
     }
   }
-
 }
