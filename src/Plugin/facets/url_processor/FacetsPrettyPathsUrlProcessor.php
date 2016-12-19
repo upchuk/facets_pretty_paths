@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\facets_pretty_paths\Plugin\facets\url_processor\FacetsPrettyPathsUrlProcessor.
- */
-
 namespace Drupal\facets_pretty_paths\Plugin\facets\url_processor;
 
 use Drupal\Core\Url;
@@ -27,7 +22,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
    * @var array
    *   An array containing the active filters
    */
-  protected $active_filters = [];
+  protected $activeFilters = [];
 
   /**
    * {@inheritdoc}
@@ -47,10 +42,8 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
       return [];
     }
 
-
-    $path = $this->request->getPathInfo();
+    $path = rtrim($this->request->getPathInfo(), '/');
     $filters = substr($path, (strlen($facet->getFacetSource()->getPath())));
-
 
     /** @var \Drupal\facets\Result\ResultInterface $result */
     foreach ($results as &$result) {
@@ -106,8 +99,8 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
    */
   public function setActiveItems(FacetInterface $facet) {
     // Get the filter key of the facet.
-    if (isset($this->active_filters[$facet->getUrlAlias()])) {
-      foreach ($this->active_filters[$facet->getUrlAlias()] as $value) {
+    if (isset($this->activeFilters[$facet->getUrlAlias()])) {
+      foreach ($this->activeFilters[$facet->getUrlAlias()] as $value) {
         $facet->setActiveItem(trim($value, '"'));
       }
     }
@@ -121,27 +114,27 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
    * active values for a specific facet are added to the facet.
    */
   protected function initializeActiveFilters($configuration) {
-    if($configuration['facet']){
+    if ($configuration['facet']) {
       $facet_source_path = $configuration['facet']->getFacetSource()->getPath();
     }
 
     $path = $this->request->getPathInfo();
-    if(strpos($path, $facet_source_path, 0)=== 0){
+    if (strpos($path, $facet_source_path, 0) === 0) {
       $filters = substr($path, (strlen($facet_source_path) + 1));
       $parts = explode('/', $filters);
       $key = '';
-      foreach($parts as $index => $part){
-        if($index%2 == 0){
+      foreach ($parts as $index => $part) {
+        if ($index%2 == 0) {
           $key = $part;
-        }else{
-          if (!isset($this->active_filters[$key])) {
-            $this->active_filters[$key] = [$part];
+        }
+        else {
+          if (!isset($this->activeFilters[$key])) {
+            $this->activeFilters[$key] = [$part];
           }
           else {
-            $this->active_filters[$key][] = $part;
+            $this->activeFilters[$key][] = $part;
           }
         }
-
       }
     }
   }
