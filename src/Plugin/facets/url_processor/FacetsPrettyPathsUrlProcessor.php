@@ -81,6 +81,16 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
             $filters_current_result =  str_replace('/' . $filter_key . '/' . $id, '', $filters_current_result);
           }
         }
+        // Exclude currently active results from the filter params if we are in
+        // the show_only_one_result mode.
+        if ($facet->getShowOnlyOneResult()) {
+          foreach ($results as $result2) {
+            if ($result2->isActive()) {
+              $active_filter_string = '/' . $filter_key . '/' . $result2->getRawValue();
+              $filters_current_result =  str_replace($active_filter_string, '', $filters_current_result);
+            }
+          }
+        }
       }
 
       $url = Url::fromUri('base:' . $facet->getFacetSource()->getPath() . $filters_current_result);
