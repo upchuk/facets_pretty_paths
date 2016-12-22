@@ -71,7 +71,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
           $child_ids = $facet->getHierarchyInstance()->getNestedChildIds($result->getRawValue());
           $parents_and_child_ids = array_merge($parent_ids, $child_ids);
           foreach ($parents_and_child_ids as $id) {
-            $filters_current_result =  str_replace('/' . $filter_key . '/' . $id, '', $filters_current_result);
+            $filters_current_result =  str_replace('/' . $filter_key . '/' . $id . '/', '/', $filters_current_result);
           }
         }
         // Exclude currently active results from the filter params if we are in
