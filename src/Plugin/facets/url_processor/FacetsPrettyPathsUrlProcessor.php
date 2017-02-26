@@ -77,7 +77,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
           $child_ids = $facet->getHierarchyInstance()->getNestedChildIds($raw_value);
           $parents_and_child_ids = array_merge($parent_ids, $child_ids);
           foreach ($parents_and_child_ids as $id) {
-            $filters_current_result =  str_replace('/' . $filter_key . '/' . $coder->encode($id) . '/', '/', $filters_current_result);
+            $filters_current_result = str_replace('/' . $filter_key . '/' . $coder->encode($id) . '/', '/', $filters_current_result);
           }
         }
         // Exclude currently active results from the filter params if we are in
@@ -86,7 +86,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
           foreach ($results as $result2) {
             if ($result2->isActive()) {
               $active_filter_string = '/' . $filter_key . '/' . $coder->encode($result2->getRawValue());
-              $filters_current_result =  str_replace($active_filter_string, '', $filters_current_result);
+              $filters_current_result = str_replace($active_filter_string, '', $filters_current_result);
             }
           }
         }
@@ -134,7 +134,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
       $parts = explode('/', $filters);
       $key = '';
       foreach ($parts as $index => $part) {
-        if ($index%2 == 0) {
+        if ($index % 2 == 0) {
           $key = $part;
         }
         else {

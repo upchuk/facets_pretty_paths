@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Implements hooks for the pretty paths module.
+ */
+
 use Drupal\Core\Form\FormStateInterface;
 
 function facets_pretty_paths_form_facets_facet_edit_form_alter(&$form, FormStateInterface $form_state) {

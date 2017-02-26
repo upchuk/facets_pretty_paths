@@ -31,4 +31,5 @@ class PathProcessorPrettyPaths implements InboundPathProcessorInterface {
 
     return $path;
   }
+
 }
