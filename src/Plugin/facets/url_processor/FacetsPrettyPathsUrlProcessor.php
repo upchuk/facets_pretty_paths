@@ -44,34 +44,40 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
 
     $path = rtrim($this->request->getPathInfo(), '/');
     $filters = substr($path, (strlen($facet->getFacetSource()->getPath())));
+    $coder_plugin_manager = \Drupal::service('plugin.manager.facets_pretty_paths.coder');
+    $coder_id = $facet->getThirdPartySetting('facets_pretty_paths', 'coder', 'default_coder');
+    $coder = $coder_plugin_manager->createInstance($coder_id, ['facet' => $facet]);
 
     /** @var \Drupal\facets\Result\ResultInterface $result */
     foreach ($results as &$result) {
+      $raw_value = $result->getRawValue();
+      $encoded_value = $coder->encode($raw_value);
+
       $filters_current_result = $filters;
       $filter_key = $facet->getUrlAlias();
       // If the value is active, remove the filter string from the parameters.
       if ($result->isActive()) {
-        $filters_current_result = str_replace('/' . $filter_key . '/' . $result->getRawValue(), '', $filters_current_result);
+        $filters_current_result = str_replace('/' . $filter_key . '/' . $encoded_value, '', $filters_current_result);
         if ($facet->getEnableParentWhenChildGetsDisabled() && $facet->getUseHierarchy()) {
           // Enable parent id again if exists.
-          $parent_ids = $facet->getHierarchyInstance()->getParentIds($result->getRawValue());
+          $parent_ids = $facet->getHierarchyInstance()->getParentIds($raw_value);
           if (isset($parent_ids[0]) && $parent_ids[0]) {
-            $filters_current_result .= '/' . $filter_key . '/' . $parent_ids[0];
+            $filters_current_result .= '/' . $filter_key . '/' . $coder->encode($parent_ids[0]);
           }
         }
       }
       // If the value is not active, add the filter string.
       else {
-        $filters_current_result .= '/' . $filter_key . '/' . $result->getRawValue();
+        $filters_current_result .= '/' . $filter_key . '/' . $encoded_value;
 
         if ($facet->getUseHierarchy()) {
           // If hierarchy is active, unset parent trail and every child when
           // building the enable-link to ensure those are not enabled anymore.
-          $parent_ids = $facet->getHierarchyInstance()->getParentIds($result->getRawValue());
-          $child_ids = $facet->getHierarchyInstance()->getNestedChildIds($result->getRawValue());
+          $parent_ids = $facet->getHierarchyInstance()->getParentIds($raw_value);
+          $child_ids = $facet->getHierarchyInstance()->getNestedChildIds($raw_value);
           $parents_and_child_ids = array_merge($parent_ids, $child_ids);
           foreach ($parents_and_child_ids as $id) {
-            $filters_current_result =  str_replace('/' . $filter_key . '/' . $id . '/', '/', $filters_current_result);
+            $filters_current_result =  str_replace('/' . $filter_key . '/' . $coder->encode($id) . '/', '/', $filters_current_result);
           }
         }
         // Exclude currently active results from the filter params if we are in
@@ -79,7 +85,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
         if ($facet->getShowOnlyOneResult()) {
           foreach ($results as $result2) {
             if ($result2->isActive()) {
-              $active_filter_string = '/' . $filter_key . '/' . $result2->getRawValue();
+              $active_filter_string = '/' . $filter_key . '/' . $coder->encode($result2->getRawValue());
               $filters_current_result =  str_replace($active_filter_string, '', $filters_current_result);
             }
           }
@@ -100,8 +106,12 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
   public function setActiveItems(FacetInterface $facet) {
     // Get the filter key of the facet.
     if (isset($this->activeFilters[$facet->getUrlAlias()])) {
+      $coder_plugin_manager = \Drupal::service('plugin.manager.facets_pretty_paths.coder');
+      $coder_id = $facet->getThirdPartySetting('facets_pretty_paths', 'coder', 'default_coder');
+      $coder = $coder_plugin_manager->createInstance($coder_id, ['facet' => $facet]);
+
       foreach ($this->activeFilters[$facet->getUrlAlias()] as $value) {
-        $facet->setActiveItem(trim($value, '"'));
+        $facet->setActiveItem(trim($coder->decode($value), '"'));
       }
     }
   }

@@ -1,17 +1,12 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\url_alter_test\PathProcessorTest.
- */
-
 namespace Drupal\facets_pretty_paths;
 
 use Drupal\Core\PathProcessor\InboundPathProcessorInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Path processor for url_alter_test.
+ * Path processor for facets_pretty_paths.
  */
 class PathProcessorPrettyPaths implements InboundPathProcessorInterface {
 

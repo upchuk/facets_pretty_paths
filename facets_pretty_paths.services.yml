@@ -3,3 +3,6 @@ services:
     class: Drupal\facets_pretty_paths\PathProcessorPrettyPaths
     tags:
       - { name: path_processor_inbound, priority: 800 }
+  plugin.manager.facets_pretty_paths.coder:
+    class: Drupal\facets_pretty_paths\Coder\CoderPluginManager
+    parent: default_plugin_manager
