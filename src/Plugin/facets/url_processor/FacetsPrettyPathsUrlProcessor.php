@@ -93,8 +93,21 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
       }
 
       $url = Url::fromUri('base:' . $facet->getFacetSource()->getPath() . $filters_current_result);
-      $url->setOption('query', $this->request->query->all());
+
+      // First get the current list of get parameters.
+      $get_params = $this->request->query;
+      // When adding/removing a filter the number of pages may have changed,
+      // possibly resulting in an invalid page parameter.
+      if ($get_params->has('page')) {
+        $current_page = $get_params->get('page');
+        $get_params->remove('page');
+      }
+      $url->setOption('query', $get_params->all());
       $result->setUrl($url);
+      // Restore page parameter again. See https://www.drupal.org/node/2726455.
+      if (isset($current_page)) {
+       $get_params->set('page', $current_page);
+      }
     }
 
     return $results;
