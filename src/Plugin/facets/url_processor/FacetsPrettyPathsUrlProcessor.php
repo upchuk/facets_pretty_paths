@@ -42,8 +42,13 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
       return [];
     }
 
-    $path = rtrim($this->request->getPathInfo(), '/');
-    $filters = substr($path, (strlen($facet->getFacetSource()->getPath())));
+    $current_path = rtrim($this->request->getPathInfo(), '/');
+    $facet_source_path = $facet->getFacetSource()->getPath();
+    $facet_source_path_length = strlen($facet_source_path);
+    $filters = '';
+    if(substr($current_path, 0, $facet_source_path_length) === $facet_source_path){
+      $filters = substr($current_path, $facet_source_path_length);
+    }
     $coder_plugin_manager = \Drupal::service('plugin.manager.facets_pretty_paths.coder');
     $coder_id = $facet->getThirdPartySetting('facets_pretty_paths', 'coder', 'default_coder');
     $coder = $coder_plugin_manager->createInstance($coder_id, ['facet' => $facet]);
