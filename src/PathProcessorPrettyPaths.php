@@ -26,6 +26,11 @@ class PathProcessorPrettyPaths implements InboundPathProcessorInterface {
       $facet_source_path = $facet_source_plugin->getPath();
       if ($path && strpos($path, $facet_source_path, 0) === 0 && strlen($facet_source_path) > 1) {
         $path = $facet_source_path;
+        // Add an attribute to prevent that the Redirect Module redirects to the
+        // canonical URL when "Enforce clean and canonical URLs" is selected.
+        // We use the request object directly as $request is a cloned object
+        // made in RedirectRequestSubscriber::onKernelRequestCheckRedirect.
+        \Drupal::request()->attributes->set('_disable_route_normalizer', TRUE);
       }
     }
 
