@@ -35,8 +35,9 @@ function facets_pretty_paths_form_facets_facet_edit_form_alter(&$form, FormState
       $form['facet_settings']['facets_pretty_paths_coder'][$coder_id]['#description'] = $coder_description;
     }
 
-    $form['actions']['submit']['#submit'][] = 'facets_pretty_paths_facet_edit_form_submit';
-
+    // We need to add our custom submit handler before the defaults. If we
+    // trigger after the defaults, $facet->save() will break the entity form.
+    array_unshift($form['actions']['submit']['#submit'], "facets_pretty_paths_facet_edit_form_submit");
   }
 }
 
