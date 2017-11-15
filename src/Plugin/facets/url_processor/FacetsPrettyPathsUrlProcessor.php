@@ -150,6 +150,13 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
     if (strpos($path, $facet_source_path, 0) === 0) {
       $filters = substr($path, (strlen($facet_source_path) + 1));
       $parts = explode('/', $filters);
+      if(count($parts) % 2 !== 0){
+        // Our key/value combination should always be even. If uneven, we just
+        // assume that the first string is not part of the filters, and remove
+        // it. This can occur when an url lives in the same path as our facet
+        // source, e.g. /search/overview where /search is the facet source path.
+        array_shift($parts);
+      }
       $key = '';
       foreach ($parts as $index => $part) {
         if ($index % 2 == 0) {
