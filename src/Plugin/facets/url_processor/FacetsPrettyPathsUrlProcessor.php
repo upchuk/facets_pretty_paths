@@ -3,10 +3,13 @@
 namespace Drupal\facets_pretty_paths\Plugin\facets\url_processor;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
 use Drupal\facets\Entity\Facet;
 use Drupal\facets\FacetInterface;
 use Drupal\facets\UrlProcessor\UrlProcessorPluginBase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -18,14 +21,49 @@ use Symfony\Component\HttpFoundation\Request;
  *   description = @Translation("Pretty paths uses slashes as separator, e.g. /brand/drupal/color/blue"),
  * )
  */
-class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
+class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements ContainerFactoryPluginInterface {
+
+  /**
+  * The current_route_match service.
+  *
+  * @var \Drupal\Core\Routing\ResettableStackedRouteMatchInterface
+  */
+  protected $routeMatch;
+
+  /**
+   * Constructs FacetsPrettyPathsUrlProcessor object.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin_id for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   A request object for the current request.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface
+   *   The entity type manager service.
+   * @param \Drupal\Core\Routing\RouteMatchInterface $routeMatch
+   *   The route match service.
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, Request $request, EntityTypeManagerInterface $entity_type_manager, RouteMatchInterface $routeMatch) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $request, $entity_type_manager);
+    $this->routeMatch = $routeMatch;
+    $this->initializeActiveFilters($configuration);
+  }
 
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, Request $request, EntityTypeManagerInterface $entity_type_manager) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $request, $entity_type_manager);
-    $this->initializeActiveFilters($configuration);
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('request_stack')->getMasterRequest(),
+      $container->get('entity_type.manager'),
+      $container->get('current_route_match')
+    );
   }
 
   /**
@@ -40,13 +78,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
 
     $initialized_coders = [];
     $initialized_facets = [];
-    $current_path = rtrim($this->request->getPathInfo(), '/');
-    $facet_source_path = $facet->getFacetSource()->getPath();
-    $facet_source_path_length = strlen($facet_source_path);
-    $filters = [];
-    if(substr($current_path, 0, $facet_source_path_length) === $facet_source_path){
-      $filters = $this->getActiveFilters();
-    }
+    $filters = $this->getActiveFilters();
     $coder_plugin_manager = \Drupal::service('plugin.manager.facets_pretty_paths.coder');
     $coder_id = $facet->getThirdPartySetting('facets_pretty_paths', 'coder', 'default_coder');
     $coder = $coder_plugin_manager->createInstance($coder_id, ['facet' => $facet]);
@@ -153,13 +185,9 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase {
     $mapping = &drupal_static('facets_pretty_paths_init',[]);
     if (!isset($mapping[$facet_source_id])) {
       $mapping[$facet_source_id] = [];
-
-      $facet_source_path = $configuration['facet']->getFacetSource()->getPath();
       $coder_plugin_manager = \Drupal::service('plugin.manager.facets_pretty_paths.coder');
       $initialized_coders = []; // Will hold all initialized coders.
-      $path = $this->request->getPathInfo();
-      if (strpos($path, $facet_source_path, 0) === 0) {
-        $filters = substr($path, (strlen($facet_source_path) + 1));
+      if ($filters = $this->routeMatch->getParameter('facets_query')) {
         $parts = explode('/', $filters);
         if(count($parts) % 2 !== 0){
           // Our key/value combination should always be even. If uneven, we just

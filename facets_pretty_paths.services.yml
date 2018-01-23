@@ -1,8 +1,9 @@
 services:
-  facets_pretty_paths.path_processor:
-    class: Drupal\facets_pretty_paths\PathProcessorPrettyPaths
+  facets_pretty_paths.route_subscriber:
+    class: Drupal\facets_pretty_paths\RouteSubscriber
+    arguments: ['@plugin.manager.facets.facet_source']
     tags:
-      - { name: path_processor_inbound, priority: 80 }
+      - { name: event_subscriber }
   plugin.manager.facets_pretty_paths.coder:
     class: Drupal\facets_pretty_paths\Coder\CoderPluginManager
     parent: default_plugin_manager
