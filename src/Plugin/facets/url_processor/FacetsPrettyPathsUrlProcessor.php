@@ -148,7 +148,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
         }
       }
 
-      $url = Url::fromUri('base:' . $facet->getFacetSource()->getPath() . $pretty_paths_string);
+      $url = Url::fromUri('internal:' . $facet->getFacetSource()->getPath() . $pretty_paths_string);
 
       // First get the current list of get parameters.
       $get_params = $this->request->query;
