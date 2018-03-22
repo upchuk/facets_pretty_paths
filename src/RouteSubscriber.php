@@ -38,6 +38,16 @@ class RouteSubscriber extends RouteSubscriberBase {
       $sourcePlugin = $this->facetSourcePluginManager->createInstance($source['id']);
       $path = $sourcePlugin->getPath();
 
+      $storage = \Drupal::entityTypeManager()->getStorage('facets_facet_source');
+      $source_id = str_replace(':', '__', $sourcePlugin->getPluginId());
+      $facet_source = $storage->load($source_id);
+      if(!$facet_source || $facet_source->getUrlProcessorName() != 'facets_pretty_paths'){
+        // If no custom configuration is set for the facet source, it is not
+        // using pretty_paths. If there is custom configuration, ensure the url
+        // processor is pretty paths.
+        continue;
+      }
+
       try {
         $url = Url::fromUri('internal:' . $path);
         $sourceRoute = $collection->get($url->getRouteName());
