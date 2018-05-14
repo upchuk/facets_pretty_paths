@@ -122,7 +122,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
         if ($result->getFacet()->getShowOnlyOneResult()) {
           foreach ($results as $result2) {
             if ($result2->isActive()) {
-              if (($key = array_search($coder->encode($result2->getRawValue()), $filters_current_result[$facet->id()])) !== false) {
+              if (($key = array_search($result2->getRawValue(), $filters_current_result[$facet->id()])) !== false) {
                 unset($filters_current_result[$result->getFacet()->id()][$key]);
               }
             }
