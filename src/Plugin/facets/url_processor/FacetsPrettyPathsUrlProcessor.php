@@ -132,7 +132,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
 
       // Now we start transforming $filters_current_result array into a string
       // which we append later to the current path.
-      $pretty_paths_string = "";
+      $pretty_paths_presort_data = [];
       foreach($filters_current_result as $facet_id => $active_values){
         foreach($active_values as $active_value){
           // Ensure we only load every facet and coder once.
@@ -144,10 +144,15 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
             $initialized_coders[$facet_id] = $coder;
           }
           $encoded_value = $initialized_coders[$facet_id]->encode($active_value);
-          $pretty_paths_string .= "/" . $initialized_facets[$facet_id]->getUrlAlias() . "/" . $encoded_value;
+          $pretty_paths_presort_data[] = [
+            'weight' => $initialized_facets[$facet_id]->getWeight(),
+            'name' => $initialized_facets[$facet_id]->getName(),
+            'pretty_path_alias' => "/" . $initialized_facets[$facet_id]->getUrlAlias() . "/" . $encoded_value
+          ];
         }
       }
-
+      usort($pretty_paths_presort_data, [$this, 'sortByWeightAndName']);
+      $pretty_paths_string = implode('', array_column($pretty_paths_presort_data, 'pretty_path_alias'));
       $url = Url::fromUri('internal:' . $facet->getFacetSource()->getPath() . $pretty_paths_string);
 
       // First get the current list of get parameters.
@@ -167,6 +172,25 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
     }
 
     return $results;
+  }
+
+  /**
+   * Sorts an array with weight and name values first by weight, then by name.
+   *
+   * @param array $a
+   *   First item for comparison.
+   * @param array $b
+   *   Second item for comparison.
+   *
+   * @return int
+   *   The comparison result for uasort().
+   */
+  function sortByWeightAndName($a, $b){
+    if($a['weight'] == $b['weight']){
+      return strcasecmp($a['name'], $b['name']);
+    }else{
+      return $a['weight'] < $b['weight'] ? -1 : 1;
+    }
   }
 
 
