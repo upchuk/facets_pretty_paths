@@ -151,7 +151,7 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
           ];
         }
       }
-      usort($pretty_paths_presort_data, [$this, 'sortByWeightAndName']);
+      $pretty_paths_presort_data = $this->sortByWeightAndName($pretty_paths_presort_data);
       $pretty_paths_string = implode('', array_column($pretty_paths_presort_data, 'pretty_path_alias'));
       $url = Url::fromUri('internal:' . $facet->getFacetSource()->getPath() . $pretty_paths_string);
 
@@ -175,24 +175,18 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
   }
 
   /**
-   * Sorts an array with weight and name values first by weight, then by name.
+   * Sorts an array with weight and name values first by weight, then by the alias of the facet item value.
    *
-   * @param array $a
-   *   First item for comparison.
-   * @param array $b
-   *   Second item for comparison.
-   *
-   * @return int
-   *   The comparison result for uasort().
+   * @param $pretty_paths
+   * @return array
    */
-  function sortByWeightAndName($a, $b){
-    if($a['weight'] == $b['weight']){
-      return strcasecmp($a['name'], $b['name']);
-    }else{
-      return $a['weight'] < $b['weight'] ? -1 : 1;
-    }
-  }
+  function sortByWeightAndName($pretty_paths) {
+    array_multisort(array_column($pretty_paths, 'weight'), SORT_ASC,
+      array_column($pretty_paths, 'name'), SORT_ASC,
+      array_column($pretty_paths, 'pretty_path_alias'), SORT_ASC, $pretty_paths);
 
+    return $pretty_paths;
+  }
 
   /**
    * Initializes the active filters from the url.
