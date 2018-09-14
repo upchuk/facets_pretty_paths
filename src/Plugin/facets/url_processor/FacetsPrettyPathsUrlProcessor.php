@@ -211,7 +211,23 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
       $mapping[$facet_source_id] = [];
       $coder_plugin_manager = \Drupal::service('plugin.manager.facets_pretty_paths.coder');
       $initialized_coders = []; // Will hold all initialized coders.
-      if ($filters = $this->routeMatch->getParameter('facets_query')) {
+      $filters = FALSE;
+      // Default pretty path routes have their filters defined as route params.
+      if($this->routeMatch->getParameter('facets_query')){
+        $filters = $this->routeMatch->getParameter('facets_query');
+      }
+      // When current route is views.ajax, retrieve filters from the real url,
+      // defined as GET parameter.
+      if($this->routeMatch->getRouteName() === 'views.ajax'){
+        $q = \Drupal::request()->query->get('q');
+        if ($q) {
+          $route_params = Url::fromUserInput($q)->getRouteParameters();
+          if(isset($route_params['facets_query'])){
+            $filters = $route_params['facets_query'];
+          }
+        }
+      }
+      if ($filters) {
         $parts = explode('/', $filters);
         if(count($parts) % 2 !== 0){
           // Our key/value combination should always be even. If uneven, we just
