@@ -1,0 +1,28 @@
+drupal:
+  root: "build"
+  base_url: "http://nginx"
+  database:
+    host: "mariadb"
+    port: "3306"
+    name: "drupal"
+    user: "drupal"
+    password: "drupal"
+  post_install:
+    - "./vendor/bin/drush en -y facets_pretty_paths admin_toolbar"
+    - "./vendor/bin/drush cr"
+  settings:
+    settings:
+      file_scan_ignore_directories:
+        - "vendor"
+        - "${drupal.root}"
+
+commands:
+  drupal:site-setup:
+    - { task: "symlink", from: "../../..", to: "${drupal.root}/modules/custom/facets_pretty_paths" }
+    # Generate settings.testing.php, it will be used when running functional tests.
+    - { task: "process-php", type: "write", config: "drupal.settings", source: "${drupal.root}/sites/default/default.settings.php", destination: "${drupal.root}/sites/default/settings.testing.php", override: true }
+    - { task: "run", command: "drupal:drush-setup" }
+    - { task: "run", command: "drupal:settings-setup" }
+    - { task: "run", command: "setup:phpunit" }
+  setup:phpunit:
+    - { task: "process", source: "phpunit.xml.dist", destination: "phpunit.xml" }
