@@ -1,0 +1,5 @@
+name: Facets Pretty Paths test
+description: Test module for Facets Pretty Paths
+core: 8.x
+type: module
+package: Testing

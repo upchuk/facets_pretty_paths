@@ -10,6 +10,7 @@ use Drupal\Core\Url;
 use Drupal\Core\Routing\RouteMatchInterface;
 
 class PrettyPathBreadcrumb implements BreadcrumbBuilderInterface {
+
   use StringTranslationTrait;
 
   /**
