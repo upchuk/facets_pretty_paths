@@ -1,12 +1,8 @@
 langcode: en
 status: true
 dependencies:
-  config:
-    - search_api.index.node
-    - views.view.search
   module:
     - facets_pretty_paths
-    - search_api
 third_party_settings:
   facets_pretty_paths:
     coder: default_coder

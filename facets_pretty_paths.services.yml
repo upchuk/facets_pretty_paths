@@ -11,3 +11,6 @@ services:
     class: Drupal\facets_pretty_paths\PrettyPathBreadcrumb
     tags:
       - { name: breadcrumb_builder, priority: 1500 }
+  facets_pretty_paths.active_filters:
+    class: Drupal\facets_pretty_paths\PrettyPathsActiveFilters
+    arguments: ['@entity_type.manager', '@current_route_match', '@plugin.manager.facets_pretty_paths.coder', '@request_stack']
