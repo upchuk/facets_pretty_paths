@@ -24,6 +24,18 @@ Run tests as follows:
 $ docker-compose exec -u www-data php ./vendor/bin/phpunit
 ```
 
+To run the coding standards check, use this command:
+
+```bash
+$ docker-compose exec php ./vendor/bin/run drupal:phpcs
+```
+
+And this command to try to automatically fix coding standards issues that pop up:
+
+```bash
+$ docker-compose exec php ./vendor/bin/run drupal:phpcbf
+```
+
 # Contributions
 
 Development is done in this repository and contributions are welcome in the form of PRs.

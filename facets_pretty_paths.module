@@ -2,11 +2,14 @@
 
 /**
  * @file
- * Implements hooks for the pretty paths module.
+ * Facets Pretty Paths module file.
  */
 
 use Drupal\Core\Form\FormStateInterface;
 
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
 function facets_pretty_paths_form_facets_facet_edit_form_alter(&$form, FormStateInterface $form_state) {
 
   // Load the facet and facet source configuration.

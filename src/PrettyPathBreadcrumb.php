@@ -9,6 +9,9 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\Core\Routing\RouteMatchInterface;
 
+/**
+ * Pretty Paths breadcrumb builder.
+ */
 class PrettyPathBreadcrumb implements BreadcrumbBuilderInterface {
 
   use StringTranslationTrait;
@@ -42,4 +45,5 @@ class PrettyPathBreadcrumb implements BreadcrumbBuilderInterface {
     $links[] = Link::fromTextAndUrl($title, $url);
     return $breadcrumb->setLinks($links);
   }
+
 }

@@ -8,6 +8,9 @@ use Symfony\Cmf\Component\Routing\RouteObjectInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Route;
 
+/**
+ * Testing the Pretty Paths breadcrumb builder.
+ */
 class BreadcrumbKernelTest extends KernelTestBase {
 
   /**
