@@ -73,4 +73,5 @@ class TaxonomyTermCoderTest extends KernelTestBase {
     $this->assertEquals('my-term-1', $coder->encode(1));
     $this->assertEquals('1', $coder->decode('my-term-1'));
   }
+
 }

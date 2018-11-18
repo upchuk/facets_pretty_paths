@@ -30,3 +30,7 @@ commands:
     - { task: "run", command: "setup:phpunit" }
   setup:phpunit:
     - { task: "process", source: "phpunit.xml.dist", destination: "phpunit.xml" }
+  drupal:phpcs:
+    - "phpcs --standard=Drupal --extensions=php,module,inc,install,test,profile,theme,css,info --ignore=vendor,build ."
+  drupal:phpcbf:
+    - "phpcbf --standard=Drupal --extensions=php,module,inc,install,test,profile,theme,css,info --ignore=vendor,build ."
