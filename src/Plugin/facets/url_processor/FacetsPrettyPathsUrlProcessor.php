@@ -9,6 +9,7 @@ use Drupal\Core\Url;
 use Drupal\facets\Entity\Facet;
 use Drupal\facets\FacetInterface;
 use Drupal\facets\UrlProcessor\UrlProcessorPluginBase;
+use Drupal\facets_pretty_paths\PrettyPathsActiveFilters;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -31,6 +32,13 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
   protected $routeMatch;
 
   /**
+   * The service responsible for determining the active filters.
+   *
+   * @var \Drupal\facets_pretty_paths\PrettyPathsActiveFilters
+   */
+  protected $activeFiltersService;
+
+  /**
    * Constructs FacetsPrettyPathsUrlProcessor object.
    *
    * @param array $configuration
@@ -45,11 +53,16 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
    *   The entity type manager service.
    * @param \Drupal\Core\Routing\RouteMatchInterface $routeMatch
    *   The route match service.
+   * @param \Drupal\facets_pretty_paths\PrettyPathsActiveFilters $activeFilters
+   *   The active filters service.
+   *
+   * @throws \Drupal\facets\Exception\InvalidProcessorException
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, Request $request, EntityTypeManagerInterface $entity_type_manager, RouteMatchInterface $routeMatch) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, Request $request, EntityTypeManagerInterface $entity_type_manager, RouteMatchInterface $routeMatch, PrettyPathsActiveFilters $activeFilters) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $request, $entity_type_manager);
     $this->routeMatch = $routeMatch;
-    $this->initializeActiveFilters($configuration);
+    $this->activeFiltersService = $activeFilters;
+    $this->initializeActiveFilters();
   }
 
   /**
@@ -62,7 +75,8 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
       $plugin_definition,
       $container->get('request_stack')->getMasterRequest(),
       $container->get('entity_type.manager'),
-      $container->get('current_route_match')
+      $container->get('current_route_match'),
+      $container->get('facets_pretty_paths.active_filters')
     );
   }
 
@@ -200,95 +214,9 @@ class FacetsPrettyPathsUrlProcessor extends UrlProcessorPluginBase implements Co
    * them in activeFilters which is an array where key is the facet id and value
    * is an array of raw values.
    */
-  protected function initializeActiveFilters($configuration) {
-
+  protected function initializeActiveFilters() {
     $facet_source_id = $this->configuration['facet']->getFacetSourceId();
-
-    // Do heavy lifting only once per facet source id.
-    $mapping = &drupal_static('facets_pretty_paths_init', []);
-    if (!isset($mapping[$facet_source_id])) {
-      $mapping[$facet_source_id] = [];
-      $coder_plugin_manager = \Drupal::service('plugin.manager.facets_pretty_paths.coder');
-      // Will hold all initialized coders.
-      $initialized_coders = [];
-      $filters = FALSE;
-      // Default pretty path routes have their filters defined as route params.
-      if ($this->routeMatch->getParameter('facets_query')) {
-        $filters = $this->routeMatch->getParameter('facets_query');
-      }
-      // When current route is views.ajax, retrieve filters from the real url,
-      // defined as GET parameter.
-      if ($this->routeMatch->getRouteName() === 'views.ajax') {
-        $q = \Drupal::request()->query->get('q');
-        if ($q) {
-          $route_params = Url::fromUserInput($q)->getRouteParameters();
-          if (isset($route_params['facets_query'])) {
-            $filters = $route_params['facets_query'];
-          }
-        }
-      }
-      if ($filters) {
-        $parts = explode('/', $filters);
-        if (count($parts) % 2 !== 0) {
-          // Our key/value combination should always be even. If uneven, we just
-          // assume that the first string is not part of the filters, and remove
-          // it. This can occur when an url lives in the same path as our facet
-          // source, e.g. /search/overview where /search is the facet source
-          // path.
-          array_shift($parts);
-        }
-        foreach ($parts as $index => $part) {
-          if ($index % 2 == 0) {
-            $url_alias = $part;
-          }
-          else {
-            $facet_id = $this->getFacetIdByUrlAlias($url_alias, $facet_source_id);
-            if (!$facet_id) {
-              // No valid facet url alias specified in url.
-              continue;
-            }
-            // Only initialize facet and their coder once per facet id.
-            if (!isset($initialized_coders[$facet_id])) {
-              $facet = Facet::load($facet_id);
-              $coder_id = $facet->getThirdPartySetting('facets_pretty_paths', 'coder', 'default_coder');
-              $coder = $coder_plugin_manager->createInstance($coder_id, ['facet' => $facet]);
-              $initialized_coders[$facet_id] = $coder;
-            }
-            if (!isset($mapping[$facet_source_id][$facet_id])) {
-              $mapping[$facet_source_id][$facet_id] = [$initialized_coders[$facet_id]->decode($part)];
-            }
-            else {
-              $mapping[$facet_source_id][$facet_id][] = $initialized_coders[$facet_id]->decode($part);
-            }
-          }
-        }
-      }
-    }
-    $this->activeFilters = $mapping[$facet_source_id];
-  }
-
-  /**
-   * Gets the facet id from the url alias & facet source id.
-   *
-   * @param string $url_alias
-   *   The url alias.
-   * @param string $facet_source_id
-   *   The facet source id.
-   *
-   * @return bool|string
-   *   Either the facet id, or FALSE if that can't be loaded.
-   */
-  protected function getFacetIdByUrlAlias($url_alias, $facet_source_id) {
-    $mapping = &drupal_static(__FUNCTION__);
-    if (!isset($mapping[$facet_source_id][$url_alias])) {
-      $storage = $this->entityTypeManager->getStorage('facets_facet');
-      $facet = current($storage->loadByProperties(['url_alias' => $url_alias, 'facet_source_id' => $facet_source_id]));
-      if (!$facet) {
-        return NULL;
-      }
-      $mapping[$facet_source_id][$url_alias] = $facet->id();
-    }
-    return $mapping[$facet_source_id][$url_alias];
+    $this->activeFilters = $this->activeFiltersService->getActiveFilters($facet_source_id);
   }
 
 }
